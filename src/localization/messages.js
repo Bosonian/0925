@@ -356,6 +356,8 @@ export const messages = {
     noHospitalsFound: "No nearby hospitals found",
     selectingHospital: "Selecting Hospital",
     select: "Select",
+    selectedHospital: "Selected Hospital",
+    sendingCase: "Sending Case",
   },
 
   de: {
@@ -715,5 +717,7 @@ export const messages = {
     noHospitalsFound: "Keine Krankenhäuser in der Nähe gefunden",
     selectingHospital: "Krankenhaus auswählen",
     select: "Auswählen",
+    selectedHospital: "Krankenhaus ausgewählt",
+    sendingCase: "Fall wird gesendet",
   },
 };

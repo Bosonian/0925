@@ -25,7 +25,6 @@ export class HospitalSelector {
     try {
       // Get current location
       this.currentLocation = await gpsTracker.getCurrentLocation();
-      console.log("=============================", this.currentLocation);
       // Get nearby hospitals
       this.hospitals = this.getNearbyHospitals(this.currentLocation, 50); // 50km radius
 
@@ -34,6 +33,7 @@ export class HospitalSelector {
 
       // Add event listeners
       this.attachEventListeners();
+      this.geocodeLocation();
     } catch (error) {
       console.error("[HospitalSelector] Error:", error);
       this.showError(error.message);
@@ -150,13 +150,39 @@ export class HospitalSelector {
     </div>
 
     <!-- Current Location -->
-    <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
-        📍 ${t("currentLocation")}:
-      </p>
-      <p class="text-sm font-mono text-gray-900 dark:text-gray-100 tracking-wide">
-        ${this.currentLocation.latitude.toFixed(6)}, ${this.currentLocation.longitude.toFixed(6)}
-      </p>
+    <div class="flex items-center space-y-3 border-b border-gray-200 dark:border-gray-700 justify-between px-6">
+      <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-b rounded-2xl border-gray-200 dark:border-gray-700">
+        <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
+          📍 ${t("currentLocation")}:
+        </p>
+        
+        <p class="text-sm font-mono text-gray-900 dark:text-gray-100 tracking-wide">
+          ${this.currentLocation.latitude.toFixed(6)}, ${this.currentLocation.longitude.toFixed(6)}
+        </p>
+      </div>
+      <button 
+        type="button" 
+        id="_manualLocationButton" 
+        class="px-4 py-2 rounded-md font-medium text-white bg-gray-600 hover:bg-gray-700 focus:ring-2 focus:ring-gray-400 focus:outline-none transition transform hover:scale-[1.02] shadow-sm"
+      >
+        ✏️ ${t("enterManually")}
+      </button>
+    </div>
+
+    <div class="hospital-location-manual hidden flex gap-2 px-6">
+      <input 
+        type="text" 
+        id="locationInput" 
+        class="flex-1 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500 transition"
+        placeholder="${t("enterLocationPlaceholder") || "e.g. München, Köln, Stuttgart, or 48.1351, 11.5820"}"
+      />
+      <button 
+        type="button" 
+        id="_searchLocationButton" 
+        class="px-4 py-2 rounded-md font-medium text-white bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-green-400 focus:outline-none transition transform hover:scale-[1.02] shadow-sm"
+      >
+        ${t("search")}
+      </button>
     </div>
 
     <!-- Hospital List -->
@@ -184,6 +210,11 @@ export class HospitalSelector {
        ${t("cancel")} 
       </button>
     </div>
+
+     <div 
+            id="_strokeCenterResults" 
+            class="stroke-center-results space-y-3"
+          ></div>
   </div>
 </div>
     `;
@@ -277,6 +308,41 @@ export class HospitalSelector {
    * Attach event listeners
    */
   attachEventListeners() {
+    // Manual Location Button
+    const manualLocationButton = document.getElementById("_manualLocationButton");
+    const locationManual = document.querySelector(".hospital-location-manual");
+    const searchLocationButton = document.getElementById("searchLocationButton");
+    const locationInput = document.getElementById("locationInput");
+    const resultsContainer = document.getElementById("_strokeCenterResults");
+
+    if (manualLocationButton && locationManual) {
+      manualLocationButton.addEventListener("click", () => {
+        const isHidden = locationManual.classList.contains("hidden");
+        locationManual.classList.toggle("hidden", !isHidden);
+        locationManual.classList.add("mt-4");
+      });
+    }
+
+    if (searchLocationButton) {
+      searchLocationButton.addEventListener("click", () => {
+        const location = locationInput.value.trim();
+        if (location) {
+          geocodeLocation(location, results, resultsContainer);
+        }
+      });
+    }
+
+    if (locationInput) {
+      locationInput.addEventListener("keypress", e => {
+        if (e.key === "Enter") {
+          const location = locationInput.value.trim();
+          if (location) {
+            geocodeLocation(location, results, resultsContainer);
+          }
+        }
+      });
+    }
+
     const modal = document.getElementById("hospitalSelectorModal");
     if (!modal) {
       return;
@@ -315,6 +381,147 @@ export class HospitalSelector {
 
     // ESC key to close
     document.addEventListener("keydown", this.handleEscKey);
+  }
+
+  geocodeLocation(locationString, results, resultsContainer) {
+    try {
+      safeSetInnerHTML(resultsContainer, `<div class="loading">${t("searchingLocation")}...</div>`);
+    } catch (error) {
+      resultsContainer.textContent = "Searching location...";
+      console.error("Sanitization failed:", error);
+    }
+
+    // Check if user entered coordinates (format: lat, lng or lat,lng)
+    const coordPattern = /^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/;
+    const coordMatch = locationString.trim().match(coordPattern);
+
+    if (coordMatch) {
+      // Direct coordinate input
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[2]);
+
+      // Validate coordinates are within supported German states (Bayern, BW, NRW)
+      if (lat >= 47.2 && lat <= 52.5 && lng >= 5.9 && lng <= 15.0) {
+        try {
+          safeSetInnerHTML(
+            resultsContainer,
+            `
+            <div class="location-success">
+              <p>📍 Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>
+            </div>
+          `
+          );
+        } catch (error) {
+          resultsContainer.textContent = `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          console.error("Sanitization failed:", error);
+        }
+        setTimeout(() => {
+          showNearestCenters(lat, lng, results, resultsContainer);
+        }, 500);
+        return;
+      }
+      showLocationError(
+        "Coordinates appear to be outside Germany. Please check the values.",
+        resultsContainer
+      );
+      return;
+    }
+
+    try {
+      // Clean up the location string
+      let searchLocation = locationString.trim();
+
+      // If it doesn't already include country info, add it
+      if (
+        !searchLocation.toLowerCase().includes("deutschland") &&
+        !searchLocation.toLowerCase().includes("germany") &&
+        !searchLocation.toLowerCase().includes("bayern") &&
+        !searchLocation.toLowerCase().includes("bavaria") &&
+        !searchLocation.toLowerCase().includes("nordrhein") &&
+        !searchLocation.toLowerCase().includes("baden")
+      ) {
+        searchLocation += ", Deutschland";
+      }
+
+      // Use Nominatim (OpenStreetMap) geocoding service - free and reliable
+      // Note: encodeURIComponent properly handles umlauts (ä, ö, ü, ß)
+      const encodedLocation = encodeURIComponent(searchLocation);
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodedLocation}&countrycodes=de&format=json&limit=3&addressdetails=1`;
+
+      const response = fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "iGFAP-StrokeTriage/2.1.0", // Required by Nominatim
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Geocoding API error: ${response.status}`);
+      }
+
+      const data = response.json();
+
+      if (data && data.length > 0) {
+        // Prefer results from supported states (Bayern, Baden-Württemberg, NRW)
+        let location = data[0];
+        const supportedStates = ["Bayern", "Baden-Württemberg", "Nordrhein-Westfalen"];
+
+        for (const result of data) {
+          if (result.address && supportedStates.includes(result.address.state)) {
+            location = result;
+            break;
+          }
+        }
+
+        const lat = parseFloat(location.lat);
+        const lng = parseFloat(location.lon);
+        const locationName = location.display_name || locationString;
+
+        // Show success message and then proceed with location
+        try {
+          safeSetInnerHTML(
+            resultsContainer,
+            `
+            <div class="location-success">
+              <p>📍 Found: ${locationName}</p>
+              <small style="color: #666;">Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}</small>
+            </div>
+          `
+          );
+        } catch (error) {
+          resultsContainer.textContent = `Found: ${locationName} (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+          console.error("Sanitization failed:", error);
+        }
+
+        // Wait a moment to show the found location, then show centers
+        setTimeout(() => {
+          showNearestCenters(lat, lng, results, resultsContainer);
+        }, 1000);
+      } else {
+        showLocationError(
+          `
+          <strong>Location "${locationString}" not found.</strong><br>
+          <small>Try:</small>
+          <ul style="text-align: left; font-size: 0.9em; margin: 10px 0;">
+            <li>City name: "München", "Köln", "Stuttgart"</li>
+            <li>Address: "Marienplatz 1, München"</li>
+            <li>Coordinates: "48.1351, 11.5820"</li>
+          </ul>
+        `,
+          resultsContainer
+        );
+      }
+    } catch (error) {
+      // ('Geocoding failed:', error);
+      showLocationError(
+        `
+        <strong>Unable to search location.</strong><br>
+        <small>Please try entering coordinates directly (e.g., "48.1351, 11.5820")</small>
+      `,
+        resultsContainer
+      );
+    }
   }
 
   /**

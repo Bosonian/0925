@@ -6,6 +6,7 @@ import { hospitalSelector } from "../ui/components/hospital-selector.js";
 import { caseTransmitter } from "../services/case-transmitter.js";
 import { store } from "../state/store.js";
 import { t } from "../localization/i18n.js";
+import { COMPREHENSIVE_HOSPITAL_DATABASE } from "../data/comprehensive-stroke-centers.js";
 
 /**
  * Initialize kiosk handlers
@@ -16,17 +17,63 @@ export function initializeKioskHandlers() {
     // Use closest() to handle clicks on button content (emoji, text)
     const kioskButton = e.target.closest("#shareToKiosk");
     if (kioskButton) {
-      await handleSendToHospital(kioskButton);
-    }
-
-    // Stop tracking button
-    const stopButton = e.target.closest("#stopTracking");
-    if (stopButton) {
-      handleStopTracking();
+      const hospitalId = kioskButton.dataset.hospitalIndex; // get ID from button
+      await sendCaseDirect(kioskButton, hospitalId);
     }
   });
-
   console.log("[KioskHandlers] Kiosk handlers initialized");
+}
+
+async function sendCaseDirect(button, hospitalId) {
+  try {
+    button.disabled = true;
+    button.textContent = `⏳ ${t("sendingCase")}...`;
+
+    // Fetch the hospital directly from your full database
+    const hospital = findHospitalById(hospitalId);
+
+    if (!hospital) {
+      throw new Error("Hospital not found");
+    }
+
+    const state = store.getState();
+    const { results, formData } = state;
+
+    if (!results || !results.ich) {
+      throw new Error("No stroke results available");
+    }
+
+    const moduleType = detectModuleType(results);
+
+    // Send the case
+    const response = await caseTransmitter.sendCase(results, formData, moduleType, hospital);
+
+    button.textContent = `✓ ${t("selectedHospital")}`;
+    button.disabled = false;
+
+    showTrackingStatus(response.caseId, hospital, response.eta);
+  } catch (error) {
+    console.error("[Kiosk] Error:", error);
+    button.textContent = "❌ Error - Try Again";
+    button.disabled = false;
+  }
+}
+
+function findHospitalById(id) {
+  id = String(id).trim();
+
+  for (const state of Object.values(COMPREHENSIVE_HOSPITAL_DATABASE)) {
+    const all = [
+      ...(state.neurosurgicalCenters || []),
+      ...(state.comprehensiveStrokeCenters || []),
+      ...(state.regionalStrokeUnits || []),
+    ];
+
+    const match = all.find(h => String(h.id) === id);
+    if (match) return match;
+  }
+
+  return null;
 }
 
 /**

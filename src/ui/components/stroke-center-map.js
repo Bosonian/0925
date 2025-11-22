@@ -663,6 +663,15 @@ function renderStrokeCenterList(centers, isRecommended = false) {
         <button class="directions-button" data-lat="${center.coordinates.lat}" data-lng="${center.coordinates.lng}">
           🧭 ${t("directions")}
         </button>
+         <button
+          type="button"
+          id="shareToKiosk"
+
+          class="select-hospital-button flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-400 text-white text-sm font-semibold shadow hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 transition" data-hospital-index="${center.id}"
+        >
+          📲 ${t("sendToHospital")}
+        </button>
+
       </div>
     </div>
   `
@@ -800,6 +809,15 @@ function renderEnhancedStrokeCenterCard(center, isRecommended, routing) {
         <button class="directions-button" data-lat="${center.coordinates.lat}" data-lng="${center.coordinates.lng}">
           🧭 Directions
         </button>
+         <button
+          type="button"
+          id="shareToKiosk"
+          
+           class="select-hospital-button flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-400 text-white text-sm font-semibold shadow hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 transition" data-hospital-index="${center.id}"
+        >
+          📲 ${t("sendToHospital")}
+        </button>
+
       </div>
     </div>
   `;
@@ -883,6 +901,14 @@ function createStrokeCenterCard(center, isRecommended, routing) {
         data-lng="${center.coordinates.lng}">
         🧭 Directions
       </button>
+       <button
+          type="button"
+          id="shareToKiosk"
+           class="select-hospital-button flex items-center gap-2 px-5 py-2.5 rounded-lg bg-orange-400 text-white text-sm font-semibold shadow hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 transition" data-hospital-index="${center.id}"
+        >
+          📲 ${t("sendToHospital")}
+        </button>
+
     </div>
   `;
 
