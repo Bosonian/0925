@@ -78,11 +78,13 @@ export function renderFull() {
                   </label>
                   <div class="relative">
                     <input type="number" name="gfap_value" id="gfap_value"
-                           class="mt-1 w-full bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 
+                           class="mt-1 w-full bg-gray-50 dark:bg-slate-800 border border-gray-300 dark:border-slate-700
                                   text-gray-900 dark:text-white rounded-lg px-3 py-2 pr-12 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                           min="${GFAP_RANGES.min}" max="${GFAP_RANGES.max}" required>
+                           min="${GFAP_RANGES.wholeblood.min}" max="${GFAP_RANGES.wholeblood.max}" required>
                     <span class="absolute right-3 top-2.5 text-gray-400 dark:text-slate-400 text-sm" data-i18n-key="pgml"></span>
                   </div>
+                  <input type="hidden" id="gfap_cartridge_type" value="wholeblood">
+                  <input type="hidden" id="gfap_displayed_value" value="">
                 </div>
 
                 <!-- FAST-ED Score -->

@@ -101,12 +101,25 @@ export const CRITICAL_THRESHOLDS = {
   },
 };
 
+// GFAP ranges for different cartridge types
+// Source: Abbott i-STAT TBI Cartridge Product Specifications
+// Whole Blood: Analytical measuring interval 47-10000 pg/mL, Cut-off 65 pg/mL
+// Plasma: Analytical measuring interval 30-10000 pg/mL, Cut-off 30 pg/mL
 export const GFAP_RANGES = {
-  min: 29,
-  max: 10001,
-  normal: 100,
-  elevated: 500,
-  critical: 1000,
+  plasma: {
+    min: 30,      // Abbott spec: 30 pg/mL (analytical measuring interval)
+    max: 10000,   // Abbott spec: 10000 pg/mL
+    normal: 100,
+    elevated: 500,
+    critical: 1000,
+  },
+  wholeblood: {
+    min: 47,      // Abbott spec: 47 pg/mL (analytical measuring interval)
+    max: 10000,   // Abbott spec: 10000 pg/mL
+    normal: 100,
+    elevated: 500,
+    critical: 1000,
+  }
 };
 
 export const APP_CONFIG = {

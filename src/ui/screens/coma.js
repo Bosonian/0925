@@ -33,17 +33,17 @@ export function renderComa() {
                     type="number"
                     id="gfap_value"
                     name="gfap_value"
-                    min="${GFAP_RANGES.min}"
-                    max="${GFAP_RANGES.max}"
+                    min="${GFAP_RANGES.wholeblood.min}"
+                    max="${GFAP_RANGES.wholeblood.max}"
                     step="0.1"
                     required
                     aria-describedby="gfap-help"
                     class="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   >
                   <div id="gfap-help" class="text-gray-500 dark:text-gray-400 text-sm">
-                    ${t("gfapRange").replace("{min}", GFAP_RANGES.min).replace("{max}", GFAP_RANGES.max)}   <span data-i18n-key="pgml" class="text-gray-500 dark:text-gray-400 text-sm"></span>
+                    ${t("gfapRange").replace("{min}", GFAP_RANGES.wholeblood.min).replace("{max}", GFAP_RANGES.wholeblood.max)}   <span data-i18n-key="pgml" class="text-gray-500 dark:text-gray-400 text-sm"></span>
                   </div>
-                 
+                  <input type="hidden" id="gfap_cartridge_type" value="wholeblood">
                 </div>
        
               <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">

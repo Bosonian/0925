@@ -38,10 +38,22 @@ function renderInputSummary() {
         t(`${module}ModuleTitle`) || module.charAt(0).toUpperCase() + module.slice(1);
 
       const itemsHtml = Object.entries(data)
-        .filter(([_, value]) => value !== "" && value !== null && value !== undefined)
+        .filter(([key, value]) => {
+          // Filter out internal fields and empty values
+          if (key === "gfap_cartridge_type" || key === "gfap_value_original" || key === "gfap_displayed_value") {
+            return false;
+          }
+          return value !== "" && value !== null && value !== undefined;
+        })
         .map(([key, value]) => {
+          // For GFAP value, use the original (user-entered) whole blood value if it exists
+          let displayVal = value;
+          if (key === "gfap_value" && data.gfap_value_original) {
+            displayVal = data.gfap_value_original; // Show original whole blood value
+          }
+
           const label = formatSummaryLabel(key);
-          const displayValue = formatDisplayValue(value, key);
+          const displayValue = formatDisplayValue(displayVal, key);
           const displayType = displayValue.type ? displayValue.type : "";
           let displayHtml = "<span>" + displayType + "</span>";
           if (displayType == "pg/mL") {
